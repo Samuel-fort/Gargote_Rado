@@ -14,3 +14,13 @@ FROM categorie c
 LEFT JOIN plat p ON c.id_categorie = p.id_categorie
 GROUP BY c.id_categorie, c.nom_categorie
 ORDER BY c.id_categorie;
+
+SELECT 'Etape 3 : montant total de chaque commande' AS verification;
+SELECT c.id_commande,
+       c.date_commande,
+       SUM(lc.quantite * p.prix) AS montant_total
+FROM commande c
+JOIN ligne_commande lc ON lc.id_commande = c.id_commande
+JOIN plat p ON p.id_plat = lc.id_plat
+GROUP BY c.id_commande, c.date_commande
+ORDER BY c.id_commande;
