@@ -53,3 +53,24 @@ Avec une simple colonne categorie VARCHAR(50) dans plat, rien n'empêche d'écri
 
 Réponse au piège :
 J'ai mis la quantité dans ligne_commande, pas dans plat ni dans commande. Elle dépend à la fois de la commande et du plat (2 romazava dans une commande, 1 dans une autre), donc elle ne peut vivre que dans la table qui relie les deux. La clé composée (id_commande, id_plat) évite aussi de saisir deux fois le même plat dans une commande.
+
+
+## Etape 4 : Les habitués
+
+### Schéma complet
+- CATEGORIE(**id_categorie**, nom_categorie)
+- PLAT(**id_plat**, nom_plat, prix, #id_categorie)
+- CLIENT(**id_client**, nom_client, telephone?) (nouveau)
+- COMMANDE(**id_commande**, date_commande, #id_client?) (modifié)
+- LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
+
+### CLIENT (nouveau)
+- id_client : SERIAL, clé primaire
+- nom_client : VARCHAR(100), NOT NULL
+- telephone : VARCHAR(20), facultatif
+
+### COMMANDE (modifié)
+- id_client : INTEGER, clé étrangère vers CLIENT(id_client), facultative
+
+Réponse au piège :
+Non, la clé étrangère id_client n'est pas NOT NULL, parce que la plupart des clients sont de passage et Rado ne leur demande rien. Pour ne perdre aucune commande il faut un LEFT JOIN en partant de commande : avec un JOIN simple, toutes les commandes sans client disparaissent du résultat.
