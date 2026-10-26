@@ -101,3 +101,32 @@ Non, la clé étrangère id_client n'est pas NOT NULL, parce que la plupart des 
 
 Réponse au piège :
 Une table de la salle et une commande n'ont rien à voir : la table existe toute seule, même sans commande, et elle sert plusieurs fois dans la journée, alors qu'une commande est un événement avec une date, un serveur et des plats. Une commande a au plus une table (aucune quand c'est à emporter), donc id_table est une clé étrangère facultative dans commande. Le mot table pose problème parce que c'est un mot réservé du SQL (CREATE TABLE, ALTER TABLE), donc j'ai appelé la mienne table_salle.
+
+
+## Etape 6 : Les paiements
+
+### Schéma complet
+- CATEGORIE(**id_categorie**, nom_categorie)
+- PLAT(**id_plat**, nom_plat, prix, #id_categorie)
+- CLIENT(**id_client**, nom_client, telephone?)
+- SERVEUR(**id_serveur**, nom_serveur)
+- TABLE_SALLE(**id_table**, numero)
+- COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table?)
+- LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
+- MODE_PAIEMENT(**id_mode**, libelle) (nouveau)
+- PAIEMENT(**id_paiement**, #id_commande, #id_mode, montant, reference_transaction?, date_paiement) (nouveau)
+
+### MODE_PAIEMENT (nouveau)
+- id_mode : SERIAL, clé primaire
+- libelle : VARCHAR(50), NOT NULL, UNIQUE
+
+### PAIEMENT (nouveau)
+- id_paiement : SERIAL, clé primaire
+- id_commande : INTEGER, clé étrangère vers COMMANDE(id_commande), NOT NULL
+- id_mode : INTEGER, clé étrangère vers MODE_PAIEMENT(id_mode), NOT NULL
+- montant : INTEGER, NOT NULL, strictement positif
+- reference_transaction : VARCHAR(50), facultative (seulement pour le mobile money)
+- date_paiement : DATE, NOT NULL, par défaut la date du jour
+
+Réponse au piège :
+Une colonne montant_paye dans commande ne suffit pas parce qu'une commande peut être payée en plusieurs fois et par plusieurs moyens : on perdrait le détail (10 000 en espèces et 5 000 en MVola), les références des transactions et les dates, et il faudrait la mettre à jour à la main à chaque paiement. Pour le mode de paiement j'ai choisi une table de référence plutôt qu'un CHECK. Le CHECK est plus rapide à écrire et suffit si la liste ne change jamais, mais dès que Rado accepte un nouvel opérateur il faut modifier la contrainte, alors qu'avec la table un simple INSERT suffit. En contrepartie il y a une jointure de plus à faire.

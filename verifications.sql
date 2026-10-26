@@ -43,3 +43,19 @@ LEFT JOIN ligne_commande lc ON lc.id_commande = c.id_commande
 LEFT JOIN plat p ON p.id_plat = lc.id_plat
 GROUP BY s.id_serveur, s.nom_serveur
 ORDER BY s.id_serveur;
+
+SELECT 'Etape 6 : commandes non soldees' AS verification;
+SELECT c.id_commande,
+       t.montant_du,
+       COALESCE(pa.montant_paye, 0) AS montant_paye,
+       t.montant_du - COALESCE(pa.montant_paye, 0) AS reste_a_payer
+FROM commande c
+JOIN (SELECT lc.id_commande, SUM(lc.quantite * p.prix) AS montant_du
+      FROM ligne_commande lc
+      JOIN plat p ON p.id_plat = lc.id_plat
+      GROUP BY lc.id_commande) t ON t.id_commande = c.id_commande
+LEFT JOIN (SELECT id_commande, SUM(montant) AS montant_paye
+           FROM paiement
+           GROUP BY id_commande) pa ON pa.id_commande = c.id_commande
+WHERE t.montant_du > COALESCE(pa.montant_paye, 0)
+ORDER BY c.id_commande;
