@@ -74,3 +74,30 @@ J'ai mis la quantité dans ligne_commande, pas dans plat ni dans commande. Elle 
 
 Réponse au piège :
 Non, la clé étrangère id_client n'est pas NOT NULL, parce que la plupart des clients sont de passage et Rado ne leur demande rien. Pour ne perdre aucune commande il faut un LEFT JOIN en partant de commande : avec un JOIN simple, toutes les commandes sans client disparaissent du résultat.
+
+
+## Etape 5 : Serveurs et tables
+
+### Schéma complet
+- CATEGORIE(**id_categorie**, nom_categorie)
+- PLAT(**id_plat**, nom_plat, prix, #id_categorie)
+- CLIENT(**id_client**, nom_client, telephone?)
+- SERVEUR(**id_serveur**, nom_serveur) (nouveau)
+- TABLE_SALLE(**id_table**, numero) (nouveau)
+- COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table?) (modifié)
+- LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
+
+### SERVEUR (nouveau)
+- id_serveur : SERIAL, clé primaire
+- nom_serveur : VARCHAR(100), NOT NULL
+
+### TABLE_SALLE (nouveau)
+- id_table : SERIAL, clé primaire
+- numero : INTEGER, NOT NULL, UNIQUE
+
+### COMMANDE (modifié)
+- id_serveur : INTEGER, clé étrangère vers SERVEUR(id_serveur), NOT NULL
+- id_table : INTEGER, clé étrangère vers TABLE_SALLE(id_table), facultative (NULL pour les plats à emporter)
+
+Réponse au piège :
+Une table de la salle et une commande n'ont rien à voir : la table existe toute seule, même sans commande, et elle sert plusieurs fois dans la journée, alors qu'une commande est un événement avec une date, un serveur et des plats. Une commande a au plus une table (aucune quand c'est à emporter), donc id_table est une clé étrangère facultative dans commande. Le mot table pose problème parce que c'est un mot réservé du SQL (CREATE TABLE, ALTER TABLE), donc j'ai appelé la mienne table_salle.
