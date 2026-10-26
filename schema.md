@@ -192,3 +192,37 @@ En relançant la requête de l'étape 3 après l'augmentation, la commande 1 pas
 
 Réponse au piège :
 Une colonne ingredients VARCHAR(500) avec « riz, zébu, brèdes » n'est pas conseillée parce qu'on ne peut pas y stocker la quantité de chaque ingrédient, ni la relier au stock, ni faire une requête du genre « quels plats utilisent du riz ». En plus rien ne vérifie l'orthographe, "zébu" et "zebu" deviendraient deux ingrédients, et une case qui contient plusieurs valeurs casse la première forme normale.
+
+
+## Etape 9 : Les menus du jour
+
+### Schéma complet
+- CATEGORIE(**id_categorie**, nom_categorie)
+- PLAT(**id_plat**, nom_plat, prix, est_menu, #id_categorie) (modifié)
+- CLIENT(**id_client**, nom_client, telephone?)
+- SERVEUR(**id_serveur**, nom_serveur)
+- TABLE_SALLE(**id_table**, numero)
+- COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table?)
+- LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite, prix_unitaire)
+- MODE_PAIEMENT(**id_mode**, libelle)
+- PAIEMENT(**id_paiement**, #id_commande, #id_mode, montant, reference_transaction?, date_paiement)
+- HISTORIQUE_PRIX(**#id_plat**, **date_debut**, prix)
+- INGREDIENT(**id_ingredient**, nom_ingredient, unite, stock)
+- COMPOSITION_PLAT(**#id_plat**, **#id_ingredient**, quantite)
+- COMPOSITION_MENU(**#id_menu**, **#id_plat**, quantite) (nouveau)
+
+### CATEGORIE
+- nouvelle ligne de données : Menus
+
+### PLAT (modifié)
+- est_menu : BOOLEAN, NOT NULL, par défaut FALSE
+
+### COMPOSITION_MENU (nouveau)
+- clé primaire composée (id_menu, id_plat)
+- id_menu : INTEGER, clé étrangère vers PLAT(id_plat), le plat qui est un menu
+- id_plat : INTEGER, clé étrangère vers PLAT(id_plat), un plat contenu dans le menu
+- quantite : INTEGER, NOT NULL, par défaut 1, strictement positive
+- contrainte CHECK (id_menu <> id_plat)
+
+Réponse au piège :
+Je n'ai pas fait de table menu séparée parce que le menu se commande exactement comme un plat : il a un nom, un prix, une catégorie et il apparaît dans ligne_commande. Avec deux tables il aurait fallu deux clés étrangères dans ligne_commande, ou dupliquer toute la logique des commandes. J'ai donc une association réflexive sur plat avec composition_menu. Pour empêcher un menu de se contenir lui-même j'ai mis un CHECK (id_menu <> id_plat). Il ne bloque que le cas direct : deux menus qui se contiennent l'un l'autre demanderaient un trigger ou un contrôle dans l'application.
