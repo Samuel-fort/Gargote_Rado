@@ -32,3 +32,14 @@ SELECT c.id_commande,
 FROM commande c
 LEFT JOIN client cl ON cl.id_client = c.id_client
 ORDER BY c.id_commande;
+
+SELECT 'Etape 5 : commandes et chiffre d affaires par serveur' AS verification;
+SELECT s.nom_serveur,
+       COUNT(DISTINCT c.id_commande) AS nombre_commandes,
+       COALESCE(SUM(lc.quantite * p.prix), 0) AS chiffre_affaires
+FROM serveur s
+LEFT JOIN commande c ON c.id_serveur = s.id_serveur
+LEFT JOIN ligne_commande lc ON lc.id_commande = c.id_commande
+LEFT JOIN plat p ON p.id_plat = lc.id_plat
+GROUP BY s.id_serveur, s.nom_serveur
+ORDER BY s.id_serveur;
