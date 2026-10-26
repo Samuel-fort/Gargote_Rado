@@ -130,3 +130,33 @@ Une table de la salle et une commande n'ont rien à voir : la table existe toute
 
 Réponse au piège :
 Une colonne montant_paye dans commande ne suffit pas parce qu'une commande peut être payée en plusieurs fois et par plusieurs moyens : on perdrait le détail (10 000 en espèces et 5 000 en MVola), les références des transactions et les dates, et il faudrait la mettre à jour à la main à chaque paiement. Pour le mode de paiement j'ai choisi une table de référence plutôt qu'un CHECK. Le CHECK est plus rapide à écrire et suffit si la liste ne change jamais, mais dès que Rado accepte un nouvel opérateur il faut modifier la contrainte, alors qu'avec la table un simple INSERT suffit. En contrepartie il y a une jointure de plus à faire.
+
+
+## Etape 7 : Les prix changent
+
+### Schéma complet
+- CATEGORIE(**id_categorie**, nom_categorie)
+- PLAT(**id_plat**, nom_plat, prix, #id_categorie)
+- CLIENT(**id_client**, nom_client, telephone?)
+- SERVEUR(**id_serveur**, nom_serveur)
+- TABLE_SALLE(**id_table**, numero)
+- COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table?)
+- LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite, prix_unitaire) (modifié)
+- MODE_PAIEMENT(**id_mode**, libelle)
+- PAIEMENT(**id_paiement**, #id_commande, #id_mode, montant, reference_transaction?, date_paiement)
+- HISTORIQUE_PRIX(**#id_plat**, **date_debut**, prix) (nouveau)
+
+### LIGNE_COMMANDE (modifié)
+- prix_unitaire : INTEGER, NOT NULL, prix du plat au moment de la commande
+
+### HISTORIQUE_PRIX (nouveau)
+- clé primaire composée (id_plat, date_debut)
+- id_plat : INTEGER, clé étrangère vers PLAT(id_plat)
+- date_debut : DATE, date à partir de laquelle le prix s'applique
+- prix : INTEGER, NOT NULL, strictement positif
+
+### PLAT
+- la colonne prix reste le prix actuel de la carte
+
+Réponse au piège :
+En relançant la requête de l'étape 3 après l'augmentation, la commande 1 passe de 15 000 à 16 000 Ar alors que le client a déjà payé 15 000 : le montant lit le prix actuel dans plat, donc une ancienne facture change toute seule. J'ai ajouté prix_unitaire dans ligne_commande pour garder le prix au moment de la commande (recopié depuis plat pour les lignes existantes avant d'augmenter), et tous les montants se calculent maintenant avec ce prix. Pour le bonus, la table historique_prix garde chaque prix de chaque plat avec sa date de début.

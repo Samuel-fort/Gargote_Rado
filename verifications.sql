@@ -18,10 +18,9 @@ ORDER BY c.id_categorie;
 SELECT 'Etape 3 : montant total de chaque commande' AS verification;
 SELECT c.id_commande,
        c.date_commande,
-       SUM(lc.quantite * p.prix) AS montant_total
+       SUM(lc.quantite * lc.prix_unitaire) AS montant_total
 FROM commande c
 JOIN ligne_commande lc ON lc.id_commande = c.id_commande
-JOIN plat p ON p.id_plat = lc.id_plat
 GROUP BY c.id_commande, c.date_commande
 ORDER BY c.id_commande;
 
@@ -36,11 +35,10 @@ ORDER BY c.id_commande;
 SELECT 'Etape 5 : commandes et chiffre d affaires par serveur' AS verification;
 SELECT s.nom_serveur,
        COUNT(DISTINCT c.id_commande) AS nombre_commandes,
-       COALESCE(SUM(lc.quantite * p.prix), 0) AS chiffre_affaires
+       COALESCE(SUM(lc.quantite * lc.prix_unitaire), 0) AS chiffre_affaires
 FROM serveur s
 LEFT JOIN commande c ON c.id_serveur = s.id_serveur
 LEFT JOIN ligne_commande lc ON lc.id_commande = c.id_commande
-LEFT JOIN plat p ON p.id_plat = lc.id_plat
 GROUP BY s.id_serveur, s.nom_serveur
 ORDER BY s.id_serveur;
 
@@ -50,12 +48,28 @@ SELECT c.id_commande,
        COALESCE(pa.montant_paye, 0) AS montant_paye,
        t.montant_du - COALESCE(pa.montant_paye, 0) AS reste_a_payer
 FROM commande c
-JOIN (SELECT lc.id_commande, SUM(lc.quantite * p.prix) AS montant_du
-      FROM ligne_commande lc
-      JOIN plat p ON p.id_plat = lc.id_plat
-      GROUP BY lc.id_commande) t ON t.id_commande = c.id_commande
+JOIN (SELECT id_commande, SUM(quantite * prix_unitaire) AS montant_du
+      FROM ligne_commande
+      GROUP BY id_commande) t ON t.id_commande = c.id_commande
 LEFT JOIN (SELECT id_commande, SUM(montant) AS montant_paye
            FROM paiement
            GROUP BY id_commande) pa ON pa.id_commande = c.id_commande
 WHERE t.montant_du > COALESCE(pa.montant_paye, 0)
 ORDER BY c.id_commande;
+
+SELECT 'Etape 7 : historique des prix du romazava' AS verification;
+SELECT p.nom_plat, h.date_debut, h.prix
+FROM historique_prix h
+JOIN plat p ON p.id_plat = h.id_plat
+WHERE h.id_plat = 1
+ORDER BY h.date_debut;
+
+SELECT 'Etape 7 : prix de la carte a une date donnee (12 octobre)' AS verification;
+SELECT p.nom_plat, h.prix
+FROM plat p
+JOIN historique_prix h ON h.id_plat = p.id_plat
+WHERE h.date_debut = (SELECT MAX(h2.date_debut)
+                      FROM historique_prix h2
+                      WHERE h2.id_plat = p.id_plat
+                        AND h2.date_debut <= DATE '2026-10-12')
+ORDER BY p.id_plat;
