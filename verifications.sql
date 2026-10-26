@@ -85,3 +85,15 @@ JOIN ingredient i ON i.id_ingredient = cp.id_ingredient
 WHERE c.date_commande = DATE '2026-10-12'
 GROUP BY i.id_ingredient, i.nom_ingredient, i.unite
 ORDER BY i.nom_ingredient;
+
+SELECT 'Etape 9 : menus, prix a la carte et economie' AS verification;
+SELECT m.nom_plat AS menu,
+       m.prix AS prix_menu,
+       SUM(cm.quantite * p.prix) AS somme_a_la_carte,
+       SUM(cm.quantite * p.prix) - m.prix AS economie
+FROM plat m
+JOIN composition_menu cm ON cm.id_menu = m.id_plat
+JOIN plat p ON p.id_plat = cm.id_plat
+WHERE m.est_menu
+GROUP BY m.id_plat, m.nom_plat, m.prix
+ORDER BY m.id_plat;
