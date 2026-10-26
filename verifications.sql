@@ -73,3 +73,15 @@ WHERE h.date_debut = (SELECT MAX(h2.date_debut)
                       WHERE h2.id_plat = p.id_plat
                         AND h2.date_debut <= DATE '2026-10-12')
 ORDER BY p.id_plat;
+
+SELECT 'Etape 8 : consommation theorique du 12 octobre' AS verification;
+SELECT i.nom_ingredient,
+       i.unite,
+       SUM(lc.quantite * cp.quantite) AS consommation
+FROM commande c
+JOIN ligne_commande lc ON lc.id_commande = c.id_commande
+JOIN composition_plat cp ON cp.id_plat = lc.id_plat
+JOIN ingredient i ON i.id_ingredient = cp.id_ingredient
+WHERE c.date_commande = DATE '2026-10-12'
+GROUP BY i.id_ingredient, i.nom_ingredient, i.unite
+ORDER BY i.nom_ingredient;
